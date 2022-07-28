@@ -1,0 +1,144 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+data <- read.csv("responses.csv", header=TRUE, stringsAsFactors=F)
+data$Timestamp <-NULL
+head(data)
+columns <- colnames(data)
+```
+
+```{r}
+
+positiveScale <- c("Never"=1,"Rarely"=2,"Sometimes"=3,"Quiteo ften"=4,"Extremely often"=5)
+negativeScale <- c("Never"=5,"Rarely"=4,"Sometimes"=3,"Quiteo ften"=2,"Extremely often"=1)
+dummy <- positiveScale[["Rarely"]]
+```
+
+```{r}
+#print(data[columns[16:length(columns)]])
+#ind <- which(is.na(data[columns[16:length(columns)]]), arr.ind=TRUE)
+#data[ind] <- rowMeans(data[columns[16:length(columns)]],  na.rm = TRUE)[ind[,1]]
+```
+
+```{r}
+jaws = c()
+negativeEmtions = c(2,3,4,5,8,10,11,12,18,19,20,21,22,24,26)
+HpHa = c(14,15,16,17,25)
+HpLa = c(1,7,9,29,30)
+LpHa = c(2,4,11,18,20)
+LpLA = c(5,10,12,21,22)
+jHpHa <- c()
+jHpLa <- c()
+jLpHa <- c()
+jLpLa <- c()
+for (row in 1:nrow(data)) {
+  jaws[row] = 0
+  jHpHa[row] = 0
+  jHpLa[row] = 0
+  jLpHa[row] = 0
+  jLpLa[row] = 0
+  noOfNa = 0
+  for (i in 16:length(columns)) {
+    if(is.na(data[row,columns[i]]) || data[row,columns[i]]==''){
+      noOfNa <- noOfNa + 1
+    }
+    else {
+      if(is.element(i-16,negativeEmtions)) {
+        jaws[row] <- jaws[row] + negativeScale[data[row,columns[i]]]
+        if(is.element(i-16,HpHa)){
+          jHpHa[row] <- jHpHa[row] + negativeScale[data[row,columns[i]]]
+        }
+        else if(is.element(i-16,HpLa)){
+          jHpLa[row] <- jHpLa[row] + negativeScale[data[row,columns[i]]]
+        }
+        else if(is.element(i-16,LpHa)){
+          jLpHa[row] <- jLpHa[row] + negativeScale[data[row,columns[i]]]
+        }
+        else if(is.element(i-16,LpLA)){
+          jLpLa[row] <- jLpLa[row] + negativeScale[data[row,columns[i]]]
+        }
+        
+      }
+      else {
+        jaws[row] <- jaws[row] + positiveScale[data[row,columns[i]]]
+        if(is.element(i-16,HpHa)){
+          jHpHa[row] <- jHpHa[row] + positiveScale[data[row,columns[i]]]
+        }
+        else if(is.element(i-16,HpLa)){
+          jHpLa[row] <- jHpLa[row] + positiveScale[data[row,columns[i]]]
+        }
+        else if(is.element(i-16,LpHa)){
+          jLpHa[row] <- jLpHa[row] + positiveScale[data[row,columns[i]]]
+        }
+        else if(is.element(i-16,LpLA)){
+          jLpLa[row] <- jLpLa[row] + positiveScale[data[row,columns[i]]]
+        }
+      }
+    }
+    
+  }
+  jaws[row] <- jaws[row] + round(jaws[row]/20*noOfNa)
+}
+
+
+data$JAWS <- jaws
+data$JHPHA <- jHpHa
+data$JHPLA <- jHpLa
+data$JLPHA <- jLpHa
+data$JLPLA <- jLpLa
+
+head(data)
+```
+
+```{r}
+mean(data$JAWS)
+hist(data$JAWS[data$Covid.19.infected.status == "No"])
+hist(data$JAWS[data$Covid.19.infected.status == "Yes"])
+mean1 <- mean(data$JAWS[data$Covid.19.infected.status == "Yes"])
+mean2 <- mean(data$JAWS[data$Covid.19.infected.status == "No"])
+sd1 <- sd(data$JAWS[data$Covid.19.infected.status == "Yes"])
+sd2 <- sd(data$JAWS[data$Covid.19.infected.status == "No"])
+testStat = (mean1-mean2)/(sqrt(sd1^2/34 + sd2^2/62))
+print(testStat)
+pt(testStat,33,lower.tail = T)
+
+```
+
+```{r}
+hist(data$JAWS[data$Civil.Status == "Single"])
+hist(data$JAWS[data$Civil.Status == "Married"])
+
+meanSingle <- mean(data$JAWS[data$Civil.Status == "Single"])
+meanMarried <- mean(data$JAWS[data$Civil.Status == "Married"])
+sdSingle <- sd(data$JAWS[data$Civil.Status == "Single"])
+sdMarried <- sd(data$JAWS[data$Civil.Status == "Married"])
+print(meanSingle)
+print(meanMarried)
+print(sdSingle)
+print(sdMarried)
+
+testStat = (meanMarried-meanSingle)/(sqrt(sdSingle^2/66 + sdMarried^2/28))
+print(testStat)
+pt(testStat,27,lower.tail = T)
+```
+
+```{r}
+meanOnline <- mean(data$JAWS[data$Type.of.current.working.arrangement == "Online"])
+meanPhysical <- mean(data$JAWS[data$Type.of.current.working.arrangemen == "Hybrid" | data$Type.of.current.working.arrangemen == "Physical"])
+sdOnline <- sd(data$JAWS[data$Type.of.current.working.arrangemen == "Online"])
+sdPhysical <- sd(data$JAWS[data$Type.of.current.working.arrangemen == "Hybrid" | data$Type.of.current.working.arrangemen == "Physical"])
+hist(data$JAWS[data$Type.of.current.working.arrangement == "Online"])
+hist(data$JAWS[data$Type.of.current.working.arrangemen == "Hybrid" | data$Type.of.current.working.arrangemen == "Physical"])
+
+print(meanSingle)
+print(meanMarried)
+print(sdSingle)
+print(sdMarried)
+
+testStat = (meanOnline-meanPhysical)/(sqrt(sdOnline^2/66 + sdPhysical^2/28))
+print(testStat)
+pt(testStat,39,lower.tail = T)
+```
